@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Pending Approvals — ExpensePro{% endblock %}
+{% block page_title %}Pending Approvals{% endblock %}
+{% block page_subtitle %}Review and action employee reimbursement requests{% endblock %}
+
+{% block sidebar_nav %}
+  <span class="nav-section-label">Manager</span>
+  <a href="{% url 'dashboard' %}"          class="nav-link"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+  <a href="{% url 'manager_pending' %}"    class="nav-link active"><i class="fa-solid fa-clock"></i><span>Pending Review</span></a>
+  <a href="{% url 'manager_all_expenses' %}" class="nav-link"><i class="fa-solid fa-list-check"></i><span>All Expenses</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title"><i class="fa-solid fa-clock"></i> Expenses Awaiting Review</h2>
+      <form method="GET" style="display:flex;gap:8px;">
+        <div class="search-box">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" name="q" value="{{ query }}" placeholder="Search by title or employee..." />
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-filter"></i> Search</button>
+        {% if query %}<a href="{% url 'manager_pending' %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-xmark"></i></a>{% endif %}
+      </form>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Employee</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Submitted</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exp in expenses %}
+          <tr>
+            <td style="color:var(--clr-text-muted);font-size:12px;">#{{ exp.pk }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="user-avatar sm">{{ exp.submitted_by.username|slice:":2"|upper }}</div>
+                <span style="font-weight:600;">{{ exp.submitted_by.get_full_name|default:exp.submitted_by.username }}</span>
+              </div>
+            </td>
+            <td style="font-weight:500;">{{ exp.title|truncatechars:40 }}</td>
+            <td>{{ exp.category.name|default:"—" }}</td>
+            <td><span class="amount-pill">{{ exp.currency }} {{ exp.amount }}</span></td>
+            <td style="color:var(--clr-text-muted);font-size:12px;">{{ exp.submitted_at|date:"d M Y"|default:"—" }}</td>
+            <td>
+              <a href="{% url 'manager_review' exp.pk %}" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-eye"></i> Review
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="table-empty">
+              <div class="empty-state">
+                <div class="empty-state-icon"><i class="fa-solid fa-party-horn"></i></div>
+                <h3>All expenses reviewed!</h3>
+                <p>No pending expenses at the moment.</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

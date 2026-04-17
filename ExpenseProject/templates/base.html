@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ExpensePro - Smart Expense Reimbursement Management System" />
+  <title>{% block title %}ExpensePro{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'style.css' %}" />
+  <!-- Prevent flash of wrong theme -->
+  <script>
+    if (localStorage.getItem('epTheme') === 'dark') {
+      document.documentElement.classList.add('dark-mode');
+    }
+  </script>
+</head>
+<body>
+  <div class="app-wrapper" id="app-wrapper">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">
+          <i class="fa-solid fa-receipt"></i>
+        </div>
+        <span class="logo-text">Expense<strong>Pro</strong></span>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav">
+        {% block sidebar_nav %}{% endblock %}
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar" id="sidebar-avatar">
+            {{ request.user.username|slice:":2"|upper }}
+          </div>
+          <div class="user-info">
+            <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+            <span class="user-role">{{ request.user.profile.role|default:"Employee" }}</span>
+          </div>
+          <a href="{% url 'logout' %}" class="logout-btn" title="Logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+      <header class="topbar">
+        <button class="sidebar-toggle" id="sidebar-toggle">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="topbar-title">
+          <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+          <p class="topbar-subtitle">{% block page_subtitle %}{% endblock %}</p>
+        </div>
+        <div class="topbar-actions">
+          <!-- Theme Toggle -->
+          <button class="theme-toggle theme-toggle-btn" id="theme-toggle-btn" title="Switch theme" type="button">
+            <i class="toggle-icon fa-solid fa-moon"></i>
+            <div class="toggle-track"></div>
+            <span class="toggle-label">Dark</span>
+          </button>
+
+          <button class="icon-btn" id="notif-btn" title="Notifications">
+            <i class="fa-solid fa-bell"></i>
+            <span class="notif-badge" id="notif-badge" style="display:none;">0</span>
+          </button>
+          <div class="topbar-user">
+            <div class="user-avatar sm" id="topbar-avatar">
+              {{ request.user.username|slice:":2"|upper }}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="page-body">
+        {% if messages %}
+          <div class="toast-container" id="toast-container">
+            {% for msg in messages %}
+              <div class="toast toast-{{ msg.tags }}">
+                <i class="fa-solid {% if msg.tags == 'success' %}fa-circle-check{% elif msg.tags == 'error' %}fa-circle-xmark{% else %}fa-circle-info{% endif %}"></i>
+                <span>{{ msg }}</span>
+                <button class="toast-close" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script src="{% static 'script.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

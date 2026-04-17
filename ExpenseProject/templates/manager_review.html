@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Review Expense #{{ expense.pk }} — ExpensePro{% endblock %}
+{% block page_title %}Review Expense #{{ expense.pk }}{% endblock %}
+{% block page_subtitle %}Approve or reject this reimbursement request{% endblock %}
+
+{% block sidebar_nav %}
+  <span class="nav-section-label">Manager</span>
+  <a href="{% url 'dashboard' %}"          class="nav-link"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+  <a href="{% url 'manager_pending' %}"    class="nav-link active"><i class="fa-solid fa-clock"></i><span>Pending Review</span></a>
+  <a href="{% url 'manager_all_expenses' %}" class="nav-link"><i class="fa-solid fa-list-check"></i><span>All Expenses</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width:760px;">
+
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:24px;align-items:start;">
+
+    <!-- Expense Details panel -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="fa-solid fa-file-invoice-dollar"></i> Expense Details</h2>
+        <span class="badge badge-{{ expense.status }}">{{ expense.get_status_display }}</span>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <h3 style="font-size:18px;font-weight:700;margin-bottom:4px;">{{ expense.title }}</h3>
+        {% if expense.description %}
+          <p style="color:var(--clr-text-muted);font-size:13.5px;line-height:1.7;">{{ expense.description }}</p>
+        {% endif %}
+      </div>
+
+      <div class="detail-meta-grid">
+        <div class="detail-meta-item">
+          <span class="detail-meta-label">Amount</span>
+          <span class="detail-meta-value" style="font-size:22px;color:var(--clr-primary);">
+            {{ expense.currency }} {{ expense.amount }}
+          </span>
+        </div>
+        <div class="detail-meta-item">
+          <span class="detail-meta-label">Date</span>
+          <span class="detail-meta-value">{{ expense.date }}</span>
+        </div>
+        <div class="detail-meta-item">
+          <span class="detail-meta-label">Category</span>
+          <span class="detail-meta-value">{{ expense.category.name|default:"—" }}</span>
+        </div>
+        <div class="detail-meta-item">
+          <span class="detail-meta-label">Submitted By</span>
+          <span class="detail-meta-value">{{ expense.submitted_by.get_full_name|default:expense.submitted_by.username }}</span>
+        </div>
+        <div class="detail-meta-item">
+          <span class="detail-meta-label">Submitted On</span>
+          <span class="detail-meta-value">{{ expense.submitted_at|date:"d M Y, H:i"|default:"—" }}</span>
+        </div>
+      </div>
+
+      {% if expense.receipt %}
+      <div style="margin-top:24px;">
+        <p class="detail-meta-label" style="margin-bottom:10px;">Receipt</p>
+        <div class="receipt-preview">
+          {% if expense.receipt.name|lower|slice:"-4:" == ".pdf" %}
+            <div class="receipt-placeholder">
+              <i class="fa-solid fa-file-pdf" style="font-size:32px;color:var(--clr-danger);"></i>
+              <span>PDF Receipt</span>
+            </div>
+          {% else %}
+            <img src="{{ expense.receipt.url }}" alt="Receipt" />
+          {% endif %}
+        </div>
+        <a href="{{ expense.receipt.url }}" target="_blank" class="btn btn-secondary btn-sm" style="margin-top:10px;">
+          <i class="fa-solid fa-download"></i> View Receipt
+        </a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Review Form panel -->
+    <div class="card" style="position:sticky;top:90px;">
+      <div class="card-header">
+        <h2 class="card-title"><i class="fa-solid fa-gavel"></i> Decision</h2>
+      </div>
+
+      {% if expense.status == 'pending' %}
+      <form method="POST" id="review-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="form-group">
+          <label class="form-label">{{ form.manager_note.label }}</label>
+          {{ form.manager_note }}
+        </div>
+
+        <div class="form-group" id="rejection-reason-group" style="display:none;">
+          <label class="form-label" style="color:var(--clr-danger);">
+            <i class="fa-solid fa-triangle-exclamation"></i> {{ form.rejection_reason.label }} *
+          </label>
+          {{ form.rejection_reason }}
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
+          <button type="submit" name="action" value="approve" class="btn btn-success btn-full" id="approve-btn">
+            <i class="fa-solid fa-circle-check"></i> Approve
+          </button>
+          <button type="submit" name="action" value="reject" class="btn btn-danger btn-full" id="reject-btn">
+            <i class="fa-solid fa-circle-xmark"></i> Reject
+          </button>
+          <a href="{% url 'manager_pending' %}" class="btn btn-secondary btn-full">
+            <i class="fa-solid fa-arrow-left"></i> Back
+          </a>
+        </div>
+      </form>
+
+      {% else %}
+      <div class="empty-state" style="padding:20px 0;">
+        <div class="empty-state-icon">
+          <i class="fa-solid {% if expense.status == 'approved' %}fa-circle-check{% else %}fa-circle-xmark{% endif %}"
+             style="color:{% if expense.status == 'approved' %}var(--clr-success){% else %}var(--clr-danger){% endif %};"></i>
+        </div>
+        <h3>Already {{ expense.get_status_display }}</h3>
+        {% if expense.reviewed_by %}
+          <p>By {{ expense.reviewed_by.get_full_name|default:expense.reviewed_by.username }}</p>
+        {% endif %}
+      </div>
+      <a href="{% url 'manager_pending' %}" class="btn btn-secondary btn-full" style="margin-top:10px;">
+        <i class="fa-solid fa-arrow-left"></i> Back to Pending
+      </a>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  const rejectBtn = document.getElementById('reject-btn');
+  const reasonGroup = document.getElementById('rejection-reason-group');
+
+  if (rejectBtn && reasonGroup) {
+    rejectBtn.addEventListener('click', (e) => {
+      // Show rejection reason before submitting
+      if (reasonGroup.style.display === 'none') {
+        e.preventDefault();
+        reasonGroup.style.display = 'block';
+        reasonGroup.querySelector('textarea')?.focus();
+        rejectBtn.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Confirm Rejection';
+      }
+    });
+  }
+</script>
+{% endblock %}
+{% endblock %}

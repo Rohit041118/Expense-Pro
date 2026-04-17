@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}All Expenses — ExpensePro{% endblock %}
+{% block page_title %}All Expenses{% endblock %}
+{% block page_subtitle %}Full visibility into every reimbursement request{% endblock %}
+
+{% block sidebar_nav %}
+  <span class="nav-section-label">Manager</span>
+  <a href="{% url 'dashboard' %}"          class="nav-link"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+  <a href="{% url 'manager_pending' %}"    class="nav-link"><i class="fa-solid fa-clock"></i><span>Pending Review</span></a>
+  <a href="{% url 'manager_all_expenses' %}" class="nav-link active"><i class="fa-solid fa-list-check"></i><span>All Expenses</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title"><i class="fa-solid fa-list-check"></i> All Reimbursement Requests</h2>
+    </div>
+
+    <div class="filter-bar" style="margin-bottom:20px;">
+      <form method="GET" style="display:contents;">
+        <div class="search-box">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" name="q" value="{{ query }}" placeholder="Search by title or employee..." />
+        </div>
+        <select name="status" class="form-select" style="width:auto;min-width:150px;" onchange="this.form.submit()">
+          <option value="">All Status</option>
+          {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-secondary btn-sm"><i class="fa-solid fa-filter"></i> Filter</button>
+        {% if query or status_filter %}
+          <a href="{% url 'manager_all_expenses' %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-xmark"></i> Clear</a>
+        {% endif %}
+      </form>
+    </div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Employee</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Reviewer</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exp in expenses %}
+          <tr>
+            <td style="color:var(--clr-text-muted);font-size:12px;">#{{ exp.pk }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div class="user-avatar sm">{{ exp.submitted_by.username|slice:":2"|upper }}</div>
+                <span style="font-weight:600;">{{ exp.submitted_by.get_full_name|default:exp.submitted_by.username }}</span>
+              </div>
+            </td>
+            <td style="font-weight:500;">{{ exp.title|truncatechars:30 }}</td>
+            <td>{{ exp.category.name|default:"—" }}</td>
+            <td><span class="amount-pill">{{ exp.currency }} {{ exp.amount }}</span></td>
+            <td style="color:var(--clr-text-muted);font-size:12px;">{{ exp.date }}</td>
+            <td><span class="badge badge-{{ exp.status }}">{{ exp.get_status_display }}</span></td>
+            <td style="color:var(--clr-text-muted);font-size:12px;">
+              {{ exp.reviewed_by.username|default:"—" }}
+            </td>
+            <td>
+              <a href="{% url 'expense_detail' exp.pk %}" class="btn btn-secondary btn-sm btn-icon" title="View">
+                <i class="fa-solid fa-eye"></i>
+              </a>
+              {% if exp.status == 'pending' %}
+              <a href="{% url 'manager_review' exp.pk %}" class="btn btn-primary btn-sm" style="margin-left:4px;">
+                Review
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="9" class="table-empty">
+              <div class="empty-state">
+                <div class="empty-state-icon"><i class="fa-solid fa-receipt"></i></div>
+                <h3>No expenses found</h3>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

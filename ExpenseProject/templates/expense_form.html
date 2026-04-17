@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}{% if action == 'new' %}New Expense{% else %}Edit Expense{% endif %} — ExpensePro{% endblock %}
+{% block page_title %}{% if action == 'new' %}New Expense Request{% else %}Edit Expense{% endif %}{% endblock %}
+{% block page_subtitle %}{% if action == 'new' %}Fill in the details below to submit a reimbursement{% else %}Update your draft expense{% endif %}{% endblock %}
+
+{% block sidebar_nav %}
+  <span class="nav-section-label">Employee</span>
+  <a href="{% url 'dashboard' %}"    class="nav-link"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+  <a href="{% url 'expense_list' %}" class="nav-link"><i class="fa-solid fa-receipt"></i><span>My Expenses</span></a>
+  <a href="{% url 'expense_new' %}"  class="nav-link active"><i class="fa-solid fa-plus-circle"></i><span>New Request</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width:680px;">
+  {% if expense and not expense.is_editable %}
+    <div class="readonly-banner">
+      <i class="fa-solid fa-lock"></i>
+      This expense is <strong>{{ expense.get_status_display }}</strong> and cannot be edited.
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">
+        <i class="fa-solid fa-file-invoice-dollar"></i>
+        {% if action == 'new' %}Create New Expense{% else %}Edit Draft Expense{% endif %}
+      </h2>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="expense-form">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="form-error-banner">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <!-- Title -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.title.id_for_label }}">
+          <i class="fa-solid fa-heading"></i> Expense Title *
+        </label>
+        {{ form.title }}
+        {% if form.title.errors %}<p class="form-hint" style="color:var(--clr-danger);">{{ form.title.errors }}</p>{% endif %}
+      </div>
+
+      <!-- Amount + Currency -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.amount.id_for_label }}">
+            <i class="fa-solid fa-indian-rupee-sign"></i> Amount *
+          </label>
+          {{ form.amount }}
+          {% if form.amount.errors %}<p class="form-hint" style="color:var(--clr-danger);">{{ form.amount.errors }}</p>{% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.currency.id_for_label }}">
+            <i class="fa-solid fa-coins"></i> Currency
+          </label>
+          {{ form.currency }}
+        </div>
+      </div>
+
+      <!-- Date + Category -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="{{ form.date.id_for_label }}">
+            <i class="fa-solid fa-calendar"></i> Expense Date *
+          </label>
+          {{ form.date }}
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="{{ form.category.id_for_label }}">
+            <i class="fa-solid fa-tag"></i> Category
+          </label>
+          {{ form.category }}
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label class="form-label" for="{{ form.description.id_for_label }}">
+          <i class="fa-solid fa-align-left"></i> Description
+        </label>
+        {{ form.description }}
+      </div>
+
+      <!-- Receipt Upload -->
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fa-solid fa-paperclip"></i> Receipt / Attachment
+        </label>
+        <label class="file-upload-zone" id="upload-zone">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          <p id="upload-label">Drag & drop or click to upload receipt (PNG, JPG, PDF)</p>
+          {{ form.receipt }}
+        </label>
+        {% if expense.receipt %}
+          <p class="form-hint" style="margin-top:6px;">
+            <i class="fa-solid fa-paperclip"></i>
+            Current: <a href="{{ expense.receipt.url }}" target="_blank" style="color:var(--clr-primary);">View receipt</a>
+          </p>
+        {% endif %}
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-footer" style="border-top:1px solid var(--clr-border);padding-top:20px;margin-top:4px;">
+        <a href="{% url 'expense_list' %}" class="btn btn-secondary">
+          <i class="fa-solid fa-xmark"></i> Cancel
+        </a>
+        <button type="submit" name="save_draft" class="btn btn-secondary">
+          <i class="fa-solid fa-floppy-disk"></i> Save Draft
+        </button>
+        <button type="submit" name="submit_expense" class="btn btn-primary" id="submit-btn">
+          <i class="fa-solid fa-paper-plane"></i> Submit for Approval
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  // Update file upload label
+  const uploadInput = document.getElementById('{{ form.receipt.id_for_label }}');
+  const uploadLabel = document.getElementById('upload-label');
+  if (uploadInput && uploadLabel) {
+    uploadInput.addEventListener('change', () => {
+      if (uploadInput.files.length) {
+        uploadLabel.textContent = uploadInput.files[0].name;
+      }
+    });
+  }
+</script>
+{% endblock %}
+{% endblock %}

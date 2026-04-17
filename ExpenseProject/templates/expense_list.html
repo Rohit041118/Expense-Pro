@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}My Expenses — ExpensePro{% endblock %}
+{% block page_title %}My Expenses{% endblock %}
+{% block page_subtitle %}Track and manage all your reimbursement requests{% endblock %}
+
+{% block sidebar_nav %}
+  <span class="nav-section-label">Employee</span>
+  <a href="{% url 'dashboard' %}"    class="nav-link" id="nav-dashboard"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+  <a href="{% url 'expense_list' %}" class="nav-link active"><i class="fa-solid fa-receipt"></i><span>My Expenses</span></a>
+  <a href="{% url 'expense_new' %}"  class="nav-link"><i class="fa-solid fa-plus-circle"></i><span>New Request</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title"><i class="fa-solid fa-receipt"></i> All Expenses</h2>
+      <a href="{% url 'expense_new' %}" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-plus"></i> New Expense
+      </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar" style="margin-bottom:20px;">
+      <form method="GET" style="display:contents;">
+        <div class="search-box">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" name="q" value="{{ query }}" placeholder="Search expenses..." id="search-input" />
+        </div>
+        <select name="status" class="form-select" style="width:auto;min-width:150px;" onchange="this.form.submit()">
+          <option value="">All Status</option>
+          {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-secondary btn-sm">
+          <i class="fa-solid fa-filter"></i> Filter
+        </button>
+        {% if query or status_filter %}
+          <a href="{% url 'expense_list' %}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-xmark"></i> Clear
+          </a>
+        {% endif %}
+      </form>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="expense-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exp in expenses %}
+          <tr>
+            <td style="color:var(--clr-text-muted);font-size:12px;">#{{ exp.pk }}</td>
+            <td>
+              <a href="{% url 'expense_detail' exp.pk %}" style="font-weight:600;color:var(--clr-text);">
+                {{ exp.title|truncatechars:35 }}
+              </a>
+            </td>
+            <td>{{ exp.category.name|default:"—" }}</td>
+            <td style="color:var(--clr-text-muted);">{{ exp.date }}</td>
+            <td>
+              <span class="amount-pill">{{ exp.currency }} {{ exp.amount }}</span>
+            </td>
+            <td><span class="badge badge-{{ exp.status }}">{{ exp.get_status_display }}</span></td>
+            <td>
+              <div style="display:flex;gap:6px;">
+                <a href="{% url 'expense_detail' exp.pk %}" class="btn btn-secondary btn-sm btn-icon" title="View">
+                  <i class="fa-solid fa-eye"></i>
+                </a>
+                {% if exp.is_editable %}
+                  <a href="{% url 'expense_edit' exp.pk %}" class="btn btn-secondary btn-sm btn-icon" title="Edit">
+                    <i class="fa-solid fa-pen"></i>
+                  </a>
+                  <form method="POST" action="{% url 'expense_delete' exp.pk %}" style="display:inline;"
+                        onsubmit="return confirm('Delete this expense?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Delete">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="table-empty">
+              <div class="empty-state">
+                <div class="empty-state-icon"><i class="fa-solid fa-receipt"></i></div>
+                <h3>No expenses found</h3>
+                <p>{% if query or status_filter %}Try adjusting your filters.{% else %}Start by creating your first expense request.{% endif %}</p>
+                {% if not query and not status_filter %}
+                  <a href="{% url 'expense_new' %}" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> New Expense
+                  </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

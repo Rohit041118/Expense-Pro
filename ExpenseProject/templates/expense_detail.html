@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Expense #{{ expense.pk }} — ExpensePro{% endblock %}
+{% block page_title %}Expense #{{ expense.pk }}{% endblock %}
+{% block page_subtitle %}{{ expense.title }}{% endblock %}
+
+{% block sidebar_nav %}
+  <a href="{% url 'dashboard' %}"    class="nav-link"><i class="fa-solid fa-gauge-high"></i><span>Dashboard</span></a>
+  <a href="{% url 'expense_list' %}" class="nav-link active"><i class="fa-solid fa-receipt"></i><span>My Expenses</span></a>
+  <a href="{% url 'expense_new' %}"  class="nav-link"><i class="fa-solid fa-plus-circle"></i><span>New Request</span></a>
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width:720px;">
+
+  {% if not expense.is_editable %}
+    <div class="readonly-banner">
+      <i class="fa-solid fa-lock"></i>
+      This expense is <strong>{{ expense.get_status_display }}</strong> — read only.
+    </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title" style="font-size:18px;">{{ expense.title }}</h2>
+        <div style="margin-top:6px;display:flex;gap:8px;align-items:center;">
+          <span class="badge badge-{{ expense.status }}">{{ expense.get_status_display }}</span>
+          <span style="font-size:12px;color:var(--clr-text-muted);">Created {{ expense.created_at|date:"d M Y" }}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        {% if expense.is_editable %}
+          <a href="{% url 'expense_edit' expense.pk %}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-pen"></i> Edit
+          </a>
+          <form method="POST" action="{% url 'expense_delete' expense.pk %}"
+                onsubmit="return confirm('Delete this expense permanently?')">
+            {% csrf_token %}
+            <button class="btn btn-danger btn-sm"><i class="fa-solid fa-trash"></i> Delete</button>
+          </form>
+        {% endif %}
+        <a href="{% url 'expense_list' %}" class="btn btn-secondary btn-sm">
+          <i class="fa-solid fa-arrow-left"></i> Back
+        </a>
+      </div>
+    </div>
+
+    <!-- Meta grid -->
+    <div class="detail-meta-grid">
+      <div class="detail-meta-item">
+        <span class="detail-meta-label">Amount</span>
+        <span class="detail-meta-value" style="font-size:22px;color:var(--clr-primary);">
+          {{ expense.currency }} {{ expense.amount }}
+        </span>
+      </div>
+      <div class="detail-meta-item">
+        <span class="detail-meta-label">Date</span>
+        <span class="detail-meta-value">{{ expense.date }}</span>
+      </div>
+      <div class="detail-meta-item">
+        <span class="detail-meta-label">Category</span>
+        <span class="detail-meta-value">{{ expense.category.name|default:"Uncategorized" }}</span>
+      </div>
+      <div class="detail-meta-item">
+        <span class="detail-meta-label">Submitted By</span>
+        <span class="detail-meta-value">{{ expense.submitted_by.get_full_name|default:expense.submitted_by.username }}</span>
+      </div>
+      {% if expense.submitted_at %}
+      <div class="detail-meta-item">
+        <span class="detail-meta-label">Submitted On</span>
+        <span class="detail-meta-value">{{ expense.submitted_at|date:"d M Y, H:i" }}</span>
+      </div>
+      {% endif %}
+      {% if expense.reviewed_by %}
+      <div class="detail-meta-item">
+        <span class="detail-meta-label">Reviewed By</span>
+        <span class="detail-meta-value">{{ expense.reviewed_by.get_full_name|default:expense.reviewed_by.username }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Description -->
+    {% if expense.description %}
+    <div style="margin-top:24px;">
+      <p class="detail-meta-label">Description</p>
+      <p style="margin-top:6px;color:var(--clr-text);line-height:1.7;">{{ expense.description }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Manager Note / Rejection Reason -->
+    {% if expense.manager_note %}
+    <div style="margin-top:20px;" class="readonly-banner" style="color:var(--clr-success);">
+      <i class="fa-solid fa-comment-check"></i>
+      <div><strong>Manager Note:</strong> {{ expense.manager_note }}</div>
+    </div>
+    {% endif %}
+
+    {% if expense.rejection_reason %}
+    <div style="margin-top:20px;display:flex;align-items:flex-start;gap:10px;background:var(--clr-danger-bg);border:1px solid rgba(239,68,68,0.3);color:var(--clr-danger);border-radius:var(--r-md);padding:12px 16px;font-size:13px;">
+      <i class="fa-solid fa-circle-xmark" style="margin-top:2px;"></i>
+      <div><strong>Rejection Reason:</strong> {{ expense.rejection_reason }}</div>
+    </div>
+    {% endif %}
+
+    <!-- Receipt -->
+    {% if expense.receipt %}
+    <div style="margin-top:24px;">
+      <p class="detail-meta-label" style="margin-bottom:10px;">Receipt</p>
+      <div class="receipt-preview">
+        {% if expense.receipt.name|lower|slice:"-4:" == ".pdf" %}
+          <div class="receipt-placeholder">
+            <i class="fa-solid fa-file-pdf" style="font-size:32px;color:var(--clr-danger);"></i>
+            <span>PDF Receipt</span>
+          </div>
+        {% else %}
+          <img src="{{ expense.receipt.url }}" alt="Receipt" />
+        {% endif %}
+      </div>
+      <a href="{{ expense.receipt.url }}" target="_blank" class="btn btn-secondary btn-sm" style="margin-top:10px;">
+        <i class="fa-solid fa-download"></i> Download Receipt
+      </a>
+    </div>
+    {% else %}
+    <div style="margin-top:24px;">
+      <p class="detail-meta-label" style="margin-bottom:10px;">Receipt</p>
+      <div class="receipt-preview">
+        <div class="receipt-placeholder">
+          <i class="fa-solid fa-image"></i>
+          <span>No receipt attached</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard — ExpensePro{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Welcome back, {{ request.user.get_full_name|default:request.user.username }}!{% endblock %}
+
+{% block sidebar_nav %}
+  {% if is_manager %}
+    <span class="nav-section-label">Manager</span>
+    <a href="{% url 'dashboard' %}" class="nav-link active" id="nav-dashboard">
+      <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+    </a>
+    <a href="{% url 'manager_pending' %}" class="nav-link" id="nav-pending">
+      <i class="fa-solid fa-clock"></i><span>Pending Review</span>
+      {% if total_pending %}<span class="nav-badge">{{ total_pending }}</span>{% endif %}
+    </a>
+    <a href="{% url 'manager_all_expenses' %}" class="nav-link" id="nav-all">
+      <i class="fa-solid fa-list-check"></i><span>All Expenses</span>
+    </a>
+  {% else %}
+    <span class="nav-section-label">Employee</span>
+    <a href="{% url 'dashboard' %}" class="nav-link active" id="nav-dashboard">
+      <i class="fa-solid fa-gauge-high"></i><span>Dashboard</span>
+    </a>
+    <a href="{% url 'expense_list' %}" class="nav-link" id="nav-expenses">
+      <i class="fa-solid fa-receipt"></i><span>My Expenses</span>
+    </a>
+    <a href="{% url 'expense_new' %}" class="nav-link" id="nav-new">
+      <i class="fa-solid fa-plus-circle"></i><span>New Request</span>
+    </a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in">
+
+  {% if is_manager %}
+  <!-- ── MANAGER DASHBOARD ─────────────────────── -->
+  <div class="stats-grid">
+    <div class="stat-card warning">
+      <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+      <div class="stat-value">{{ total_pending }}</div>
+      <div class="stat-label">Pending Approval</div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="stat-value">₹{{ total_approved|floatformat:0 }}</div>
+      <div class="stat-label">Total Approved</div>
+    </div>
+    <div class="stat-card danger">
+      <div class="stat-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+      <div class="stat-value">{{ total_rejected }}</div>
+      <div class="stat-label">Rejected</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
+      <div class="stat-value">₹{{ total_paid|floatformat:0 }}</div>
+      <div class="stat-label">Total Paid Out</div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <!-- Pending approvals -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="fa-solid fa-clock"></i> Pending Approvals</h2>
+        <a href="{% url 'manager_pending' %}" class="btn btn-secondary btn-sm">View All</a>
+      </div>
+      {% if pending_expenses %}
+        {% for exp in pending_expenses %}
+          <div class="approval-card">
+            <div class="approval-meta">
+              <div class="approval-submitter">
+                <div class="user-avatar sm">{{ exp.submitted_by.username|slice:":2"|upper }}</div>
+                <div>
+                  <strong>{{ exp.submitted_by.get_full_name|default:exp.submitted_by.username }}</strong>
+                  <span class="user-role">{{ exp.submitted_at|date:"d M Y"|default:"Unsubmitted" }}</span>
+                </div>
+              </div>
+              <span class="amount-pill">{{ exp.currency }} {{ exp.amount }}</span>
+            </div>
+            <div class="expense-list-title">{{ exp.title }}</div>
+            {% if exp.category %}<div class="expense-list-meta">{{ exp.category.name }}</div>{% endif %}
+            <div class="approval-actions">
+              <a href="{% url 'manager_review' exp.pk %}" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-eye"></i> Review
+              </a>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-state-icon"><i class="fa-solid fa-party-horn"></i></div>
+          <h3>All caught up!</h3>
+          <p>No pending expenses to review.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Recent activity -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title"><i class="fa-solid fa-timeline"></i> Recent Activity</h2>
+      </div>
+      {% for exp in recent_expenses %}
+        <div class="expense-list-item">
+          <div class="expense-category-icon">
+            <i class="fa-solid {{ exp.category.icon|default:'fa-receipt' }}"></i>
+          </div>
+          <div class="expense-list-info">
+            <div class="expense-list-title">{{ exp.title|truncatechars:28 }}</div>
+            <div class="expense-list-meta">{{ exp.submitted_by.username }} · {{ exp.date }}</div>
+          </div>
+          <div>
+            <span class="badge badge-{{ exp.status }}">{{ exp.get_status_display }}</span>
+          </div>
+        </div>
+      {% empty %}
+        <div class="table-empty">No activity yet.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% else %}
+  <!-- ── EMPLOYEE DASHBOARD ─────────────────────── -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon"><i class="fa-solid fa-paper-plane"></i></div>
+      <div class="stat-value">₹{{ total_submitted|floatformat:0 }}</div>
+      <div class="stat-label">Total Submitted</div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+      <div class="stat-value">₹{{ total_approved|floatformat:0 }}</div>
+      <div class="stat-label">Approved</div>
+    </div>
+    <div class="stat-card warning">
+      <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+      <div class="stat-value">{{ count_pending }}</div>
+      <div class="stat-label">Awaiting Review</div>
+    </div>
+    <div class="stat-card danger">
+      <div class="stat-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+      <div class="stat-value">{{ count_rejected }}</div>
+      <div class="stat-label">Rejected</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title"><i class="fa-solid fa-receipt"></i> Recent Expenses</h2>
+      <div style="display:flex;gap:8px;">
+        <a href="{% url 'expense_list' %}" class="btn btn-secondary btn-sm">View All</a>
+        <a href="{% url 'expense_new' %}" class="btn btn-primary btn-sm">
+          <i class="fa-solid fa-plus"></i> New
+        </a>
+      </div>
+    </div>
+    {% for exp in recent_expenses %}
+      <a href="{% url 'expense_detail' exp.pk %}" style="display:block;color:inherit;">
+        <div class="expense-list-item">
+          <div class="expense-category-icon">
+            <i class="fa-solid {{ exp.category.icon|default:'fa-receipt' }}"></i>
+          </div>
+          <div class="expense-list-info">
+            <div class="expense-list-title">{{ exp.title|truncatechars:32 }}</div>
+            <div class="expense-list-meta">{{ exp.date }} · {{ exp.get_currency_display }}</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="expense-list-amount">{{ exp.currency }} {{ exp.amount }}</div>
+            <span class="badge badge-{{ exp.status }}">{{ exp.get_status_display }}</span>
+          </div>
+        </div>
+      </a>
+    {% empty %}
+      <div class="empty-state">
+        <div class="empty-state-icon"><i class="fa-solid fa-receipt"></i></div>
+        <h3>No expenses yet</h3>
+        <p>Submit your first reimbursement request</p>
+        <a href="{% url 'expense_new' %}" class="btn btn-primary">
+          <i class="fa-solid fa-plus"></i> New Expense
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
