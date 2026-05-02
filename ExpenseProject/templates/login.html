@@ -31,7 +31,6 @@
       <button class="theme-toggle theme-toggle-btn" type="button" title="Switch theme">
         <i class="toggle-icon fa-solid fa-moon"></i>
         <div class="toggle-track"></div>
-        <span class="toggle-label">Dark</span>
       </button>
     </div>
 
@@ -46,14 +45,16 @@
       </div>
 
       <!-- Form -->
-      <form class="auth-form" method="POST" action="{% url 'login' %}" id="login-form">
+      <form class="auth-form" method="POST" action="{% url 'login' %}" id="login-form" autocomplete="off">
         {% csrf_token %}
 
-        {% if form.errors %}
-          <div class="form-error-banner">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            Invalid username or password. Try again.
-          </div>
+        {% if messages %}
+          {% for message in messages %}
+            <div class="form-error-banner" style="{% if message.tags == 'success' %}background: rgba(46, 204, 113, 0.1); color: #2ecc71; border-color: rgba(46, 204, 113, 0.3);{% endif %}">
+              <i class="{% if message.tags == 'success' %}fa-solid fa-check-circle{% else %}fa-solid fa-triangle-exclamation{% endif %}"></i>
+              {{ message }}
+            </div>
+          {% endfor %}
         {% endif %}
 
         <div class="form-group">
@@ -66,8 +67,8 @@
             name="username"
             class="form-input"
             placeholder="Enter your username"
+            autocomplete="off"
             required
-            autofocus
           />
         </div>
 
@@ -82,6 +83,7 @@
               name="password"
               class="form-input"
               placeholder="Enter your password"
+              autocomplete="new-password"
               required
             />
             <button type="button" class="toggle-pw" id="toggle-pw" title="Show/hide password">
@@ -98,12 +100,18 @@
         </button>
       </form>
 
+      <div style="text-align:center; margin-top:var(--sp-lg); font-size:14px;">
+        <span style="color:var(--clr-text-muted);">Is your company new here?</span> 
+        <a href="{% url 'signup' %}" style="color:var(--clr-primary); font-weight:600;">Sign up as Admin</a>
+      </div>
+
       <p class="auth-footer-text">
         ExpensePro &copy; {% now "Y" %} &mdash; All rights reserved
       </p>
     </div>
   </div>
 
+  <script src="{% static 'script.js' %}"></script>
   <script>
     // Password toggle
     document.getElementById('toggle-pw').addEventListener('click', function() {

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Company Setup — ExpensePro{% endblock %}
+{% block page_title %}Company Setup{% endblock %}
+{% block page_subtitle %}Configure your company details to get started{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width:600px; margin:0 auto;">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title"><i class="fa-solid fa-building"></i> Company Information</h2>
+    </div>
+    
+    <form method="POST" id="onboarding-form">
+      {% csrf_token %}
+      
+      <div style="margin-bottom:var(--sp-md);">
+        <label class="form-label">Company Name</label>
+        {{ form.name }}
+      </div>
+      
+      <div style="margin-bottom:var(--sp-lg);">
+        <label class="form-label">Country</label>
+        <select id="country-select" class="form-select" required>
+          <option value="">Loading countries...</option>
+        </select>
+        <p style="font-size:12px; color:var(--clr-text-muted); margin-top:4px;">
+          Base currency will be automatically set to: <strong id="currency-display">None</strong>
+        </p>
+      </div>
+
+      <!-- Hidden inputs for Django Form -->
+      {{ form.country }}
+      {{ form.base_currency_code }}
+      {{ form.base_currency_symbol }}
+      
+      <button type="submit" class="btn btn-primary" style="width:100%;">
+        <i class="fa-solid fa-check"></i> Complete Setup
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const select = document.getElementById('country-select');
+    const currencyDisplay = document.getElementById('currency-display');
+    const inputCountry = document.getElementById('id_country');
+    const inputCode = document.getElementById('id_currency_code');
+    const inputSymbol = document.getElementById('id_currency_symbol');
+
+    try {
+        const res = await fetch('https://restcountries.com/v3.1/all?fields=name,currencies');
+        let countries = await res.json();
+        
+        // Sort alphabetically
+        countries.sort((a, b) => a.name.common.localeCompare(b.name.common));
+        
+        select.innerHTML = '<option value="">Select your country...</option>';
+        
+        countries.forEach(c => {
+            if (c.currencies && Object.keys(c.currencies).length > 0) {
+                const curCode = Object.keys(c.currencies)[0];
+                const curSymbol = c.currencies[curCode].symbol || curCode;
+                
+                const opt = document.createElement('option');
+                opt.value = c.name.common;
+                opt.textContent = c.name.common;
+                opt.dataset.code = curCode;
+                opt.dataset.symbol = curSymbol;
+                select.appendChild(opt);
+            }
+        });
+        
+    } catch (e) {
+        select.innerHTML = '<option value="">Error loading countries</option>';
+        console.error('REST Countries API error:', e);
+    }
+
+    select.addEventListener('change', (e) => {
+        const opt = select.options[select.selectedIndex];
+        if (opt && opt.value) {
+            inputCountry.value = opt.value;
+            inputCode.value = opt.dataset.code;
+            inputSymbol.value = opt.dataset.symbol;
+            currencyDisplay.textContent = `${opt.dataset.code} (${opt.dataset.symbol})`;
+        } else {
+            inputCountry.value = '';
+            inputCode.value = '';
+            inputSymbol.value = '';
+            currencyDisplay.textContent = 'None';
+        }
+    });
+});
+</script>
+{% endblock %}

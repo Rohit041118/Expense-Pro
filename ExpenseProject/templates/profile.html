@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}My Profile — ExpensePro{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+{% block page_subtitle %}Manage your personal information{% endblock %}
+
+{% block content %}
+<div class="animate-fade-in" style="max-width:600px;">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title"><i class="fa-solid fa-user"></i> Personal Details</h2>
+    </div>
+
+    <form method="POST">
+      {% csrf_token %}
+      
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:var(--sp-md); margin-bottom:var(--sp-md);">
+        <div>
+          <label class="form-label">First Name</label>
+          {{ form.first_name }}
+        </div>
+        <div>
+          <label class="form-label">Last Name</label>
+          {{ form.last_name }}
+        </div>
+      </div>
+      
+      <div style="margin-bottom:var(--sp-md);">
+        <label class="form-label">Email Address</label>
+        {{ form.email }}
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:var(--sp-md); margin-bottom:var(--sp-lg);">
+        <div>
+          <label class="form-label">Department</label>
+          {{ form.department }}
+        </div>
+        <div>
+          <label class="form-label">Phone Number</label>
+          {{ form.phone }}
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        <i class="fa-solid fa-save"></i> Save Changes
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

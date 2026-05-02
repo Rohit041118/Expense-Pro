@@ -1,0 +1,36 @@
+{# Reusable pagination component — include with {% include 'partials/pagination.html' with page_obj=page_obj %} #}
+{% if page_obj.has_other_pages %}
+<div class="pagination-bar">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
+       class="pg-btn" title="Previous">
+      <i class="fa-solid fa-chevron-left"></i>
+    </a>
+  {% else %}
+    <span class="pg-btn disabled"><i class="fa-solid fa-chevron-left"></i></span>
+  {% endif %}
+
+  {% for num in page_obj.paginator.page_range %}
+    {% if page_obj.number == num %}
+      <span class="pg-btn active">{{ num }}</span>
+    {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+      <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
+         class="pg-btn">{{ num }}</a>
+    {% endif %}
+  {% endfor %}
+
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}"
+       class="pg-btn" title="Next">
+      <i class="fa-solid fa-chevron-right"></i>
+    </a>
+  {% else %}
+    <span class="pg-btn disabled"><i class="fa-solid fa-chevron-right"></i></span>
+  {% endif %}
+
+  <span class="pg-info">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    &nbsp;·&nbsp; {{ page_obj.paginator.count }} total
+  </span>
+</div>
+{% endif %}

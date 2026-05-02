@@ -76,6 +76,11 @@
             <i class="fa-solid fa-tag"></i> Category
           </label>
           {{ form.category }}
+          <!-- Custom category input — shown when "Other" is selected -->
+          <div id="custom-cat-wrap" style="display:none; margin-top:8px;">
+            <input type="text" name="custom_category" id="id_custom_category"
+                   class="form-input" placeholder="Type your custom category name...">
+          </div>
         </div>
       </div>
 
@@ -92,11 +97,22 @@
         <label class="form-label">
           <i class="fa-solid fa-paperclip"></i> Receipt / Attachment
         </label>
-        <label class="file-upload-zone" id="upload-zone">
-          <i class="fa-solid fa-cloud-arrow-up"></i>
-          <p id="upload-label">Drag & drop or click to upload receipt (PNG, JPG, PDF)</p>
-          {{ form.receipt }}
-        </label>
+        <div style="display: flex; gap: 10px; align-items: stretch;">
+          <label class="file-upload-zone" id="upload-zone" style="flex: 1; margin-bottom: 0;">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <p id="upload-label">Drag & drop or click to upload receipt</p>
+            {{ form.receipt }}
+          </label>
+          <button type="button" class="btn btn-secondary" id="auto-scan-btn" style="display: none; padding: 0 20px; flex-direction: column; justify-content: center; align-items: center; gap: 5px;">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+            <span>Auto-Scan</span>
+          </button>
+        </div>
+        <p id="scan-status" style="display:none; color:var(--clr-primary); font-size:13px; margin-top:8px;">
+          <i class="fa-solid fa-spinner fa-spin"></i> Scanning receipt with NVIDIA AI...
+        </p>
+        <p id="scan-error" style="display:none; color:var(--clr-danger); font-size:13px; margin-top:8px;"></p>
+
         {% if expense.receipt %}
           <p class="form-hint" style="margin-top:6px;">
             <i class="fa-solid fa-paperclip"></i>
@@ -123,13 +139,107 @@
 
 {% block extra_js %}
 <script>
-  // Update file upload label
   const uploadInput = document.getElementById('{{ form.receipt.id_for_label }}');
   const uploadLabel = document.getElementById('upload-label');
+  const scanBtn = document.getElementById('auto-scan-btn');
+  const scanStatus = document.getElementById('scan-status');
+  const scanError = document.getElementById('scan-error');
+
+  // Form inputs
+  const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+  const amountInput = document.getElementById('{{ form.amount.id_for_label }}');
+  const dateInput = document.getElementById('{{ form.date.id_for_label }}');
+
+  /* ── Custom Category toggle ─────────────────────── */
+  const catSelect    = document.getElementById('id_category');
+  const customWrap   = document.getElementById('custom-cat-wrap');
+  const customInput  = document.getElementById('id_custom_category');
+
+  if (catSelect && customWrap) {
+    // Add "Other (custom)..." as last option if not already present
+    if (![...catSelect.options].some(o => o.value === '__other__')) {
+      const opt = new Option('✏️ Other (custom)...', '__other__');
+      catSelect.appendChild(opt);
+    }
+
+    catSelect.addEventListener('change', () => {
+      if (catSelect.value === '__other__') {
+        customWrap.style.display = 'block';
+        customInput.required = true;
+        // Clear the select so it doesn't submit __other__ as the value
+        catSelect.value = '';
+      } else {
+        customWrap.style.display = 'none';
+        customInput.required = false;
+        customInput.value = '';
+      }
+    });
+  }
+  
   if (uploadInput && uploadLabel) {
     uploadInput.addEventListener('change', () => {
       if (uploadInput.files.length) {
         uploadLabel.textContent = uploadInput.files[0].name;
+        // Show scan button if an image is selected
+        const file = uploadInput.files[0];
+        if (file.type.startsWith('image/')) {
+          scanBtn.style.display = 'flex';
+          scanError.style.display = 'none';
+        } else {
+          scanBtn.style.display = 'none';
+        }
+      } else {
+        scanBtn.style.display = 'none';
+      }
+    });
+  }
+
+  // Handle OCR Auto-Scan
+  if (scanBtn) {
+    scanBtn.addEventListener('click', async () => {
+      if (!uploadInput.files.length) return;
+      
+      scanBtn.disabled = true;
+      scanStatus.style.display = 'block';
+      scanError.style.display = 'none';
+      
+      const formData = new FormData();
+      formData.append('receipt', uploadInput.files[0]);
+      formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+      
+      try {
+        const response = await fetch('{% url "ocr_receipt" %}', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          const data = result.data;
+          
+          if (data.title && titleInput) titleInput.value = data.title;
+          if (data.amount && amountInput) amountInput.value = data.amount;
+          if (data.date && dateInput) dateInput.value = data.date;
+          // Note: currency and category could be auto-selected if desired
+          
+          scanStatus.style.display = 'none';
+          scanBtn.innerHTML = '<i class="fa-solid fa-check"></i><span>Done!</span>';
+          scanBtn.classList.replace('btn-secondary', 'btn-primary');
+          setTimeout(() => {
+            scanBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i><span>Auto-Scan</span>';
+            scanBtn.classList.replace('btn-primary', 'btn-secondary');
+            scanBtn.disabled = false;
+          }, 3000);
+          
+        } else {
+          throw new Error(result.error || "Failed to scan receipt.");
+        }
+      } catch (err) {
+        scanStatus.style.display = 'none';
+        scanError.style.display = 'block';
+        scanError.textContent = err.message;
+        scanBtn.disabled = false;
       }
     });
   }

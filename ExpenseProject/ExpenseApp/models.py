@@ -3,6 +3,21 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 
+class Company(models.Model):
+    """Multi-tenant boundary for the system."""
+    name                 = models.CharField(max_length=150)
+    country              = models.CharField(max_length=100)
+    base_currency_code   = models.CharField(max_length=10, default='USD')
+    base_currency_symbol = models.CharField(max_length=10, default='$')
+    created_at           = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = 'Companies'
+
+    def __str__(self):
+        return f"{self.name} ({self.country})"
+
+
 class UserProfile(models.Model):
     """Extended user profile with role info."""
 
@@ -13,6 +28,7 @@ class UserProfile(models.Model):
     ]
 
     user       = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    company    = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='users', null=True, blank=True)
     role       = models.CharField(max_length=20, choices=ROLE_CHOICES, default='employee')
     department = models.CharField(max_length=100, blank=True)
     phone      = models.CharField(max_length=20, blank=True)
@@ -20,7 +36,7 @@ class UserProfile(models.Model):
         'self', null=True, blank=True,
         on_delete=models.SET_NULL,
         related_name='subordinates',
-        limit_choices_to={'role': 'manager'},
+        limit_choices_to={'role__in': ['manager', 'admin']},
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -67,18 +83,21 @@ class Expense(models.Model):
         (STATUS_PAID,     'Paid'),
     ]
 
-    CURRENCY_CHOICES = [
-        ('INR', '₹ INR'),
-        ('USD', '$ USD'),
-        ('EUR', '€ EUR'),
-        ('GBP', '£ GBP'),
-    ]
+    # Currency choices removed: we will allow manual entry or select via forms.
+    # currency    = models.CharField(max_length=5, choices=CURRENCY_CHOICES, default='INR')
 
     # Core fields
     title       = models.CharField(max_length=200)
     description = models.TextField(blank=True)
     amount      = models.DecimalField(max_digits=10, decimal_places=2)
-    currency    = models.CharField(max_length=5, choices=CURRENCY_CHOICES, default='INR')
+    currency    = models.CharField(max_length=10, default='USD')
+    
+    # Financial normalization for dashboards
+    base_amount = models.DecimalField(
+        max_digits=12, decimal_places=2, null=True, blank=True,
+        help_text="The amount converted to the company's base currency"
+    )
+    
     date        = models.DateField(default=timezone.now)
     category    = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -142,3 +161,30 @@ class Expense(models.Model):
         if self.status == self.STATUS_APPROVED:
             self.status = self.STATUS_PAID
             self.save()
+
+
+class Notification(models.Model):
+    """In-app notification for expense events."""
+
+    NOTIF_SUBMITTED = 'submitted'
+    NOTIF_APPROVED  = 'approved'
+    NOTIF_REJECTED  = 'rejected'
+
+    KIND_CHOICES = [
+        (NOTIF_SUBMITTED, 'Submitted'),
+        (NOTIF_APPROVED,  'Approved'),
+        (NOTIF_REJECTED,  'Rejected'),
+    ]
+
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    kind       = models.CharField(max_length=20, choices=KIND_CHOICES)
+    message    = models.CharField(max_length=255)
+    link       = models.CharField(max_length=200, blank=True)   # URL to navigate on click
+    is_read    = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"[{self.kind}] → {self.user.username}: {self.message}"

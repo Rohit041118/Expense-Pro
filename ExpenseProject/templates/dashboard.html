@@ -45,7 +45,7 @@
     </div>
     <div class="stat-card success">
       <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
-      <div class="stat-value">₹{{ total_approved|floatformat:0 }}</div>
+      <div class="stat-value">{{ request.user.profile.company.base_currency_symbol }}{{ total_approved|floatformat:0 }}</div>
       <div class="stat-label">Total Approved</div>
     </div>
     <div class="stat-card danger">
@@ -55,12 +55,12 @@
     </div>
     <div class="stat-card">
       <div class="stat-icon"><i class="fa-solid fa-money-bill-wave"></i></div>
-      <div class="stat-value">₹{{ total_paid|floatformat:0 }}</div>
+      <div class="stat-value">{{ request.user.profile.company.base_currency_symbol }}{{ total_paid|floatformat:0 }}</div>
       <div class="stat-label">Total Paid Out</div>
     </div>
   </div>
 
-  <div class="dashboard-grid">
+  <div class="dashboard-grid" style="margin-top: var(--sp-2xl);">
     <!-- Pending approvals -->
     <div class="card">
       <div class="card-header">
@@ -147,7 +147,7 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" style="margin-top: var(--sp-2xl);">
     <div class="card-header">
       <h2 class="card-title"><i class="fa-solid fa-receipt"></i> Recent Expenses</h2>
       <div style="display:flex;gap:8px;">
