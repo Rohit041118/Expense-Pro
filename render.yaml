@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: expensepro
+    env: python
+    region: singapore   # closest to India
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn ExpenseProject.wsgi:application --bind 0.0.0.0:$PORT --workers 2"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: expensepro-db
+          property: connectionString
+      - key: NVIDIA_API_KEY
+        sync: false   # Set this manually in Render dashboard
+
+databases:
+  - name: expensepro-db
+    databaseName: expensepro
+    user: expensepro_user
+    plan: free
