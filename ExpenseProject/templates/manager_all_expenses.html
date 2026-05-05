@@ -34,6 +34,11 @@
           <a href="{% url 'manager_all_expenses' %}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-xmark"></i> Clear</a>
         {% endif %}
       </form>
+      <!-- Export respects current filters -->
+      <a href="{% url 'export_expenses_csv' %}{% if query or status_filter %}?q={{ query }}&status={{ status_filter }}{% endif %}"
+         class="btn btn-primary btn-sm" style="margin-left:auto;">
+        <i class="fa-solid fa-file-csv"></i> Export CSV
+      </a>
     </div>
 
     <div class="table-wrapper">

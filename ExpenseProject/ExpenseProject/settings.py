@@ -4,7 +4,6 @@ Django settings for ExpenseProject — production-ready.
 
 from pathlib import Path
 import os
-import dj_database_url
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -77,6 +76,7 @@ WSGI_APPLICATION = 'ExpenseProject.wsgi.application'
 # Uses PostgreSQL on Render (DATABASE_URL env var), falls back to SQLite locally
 DATABASE_URL = os.environ.get('DATABASE_URL')
 if DATABASE_URL:
+    import dj_database_url
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }

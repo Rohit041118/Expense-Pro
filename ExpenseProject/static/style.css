@@ -70,22 +70,22 @@
 
 /* ─────────────────────────────────────────
    2. DARK THEME TOKENS  (.dark-mode on <html>)
-   Palette: Deep olive-black + Rich gold accent
+   Palette: Pure black + Soft sage green
 ───────────────────────────────────────── */
 html.dark-mode {
-  /* Surfaces — deep olive-black like the reference image */
-  --clr-bg:          #0e1209;
-  --clr-surface:     #141a0f;
-  --clr-surface-2:   #1c2416;
-  --clr-surface-3:   #253020;
-  --clr-border:      rgba(201,168,76,0.10);
-  --clr-border-hover:rgba(201,168,76,0.22);
+  /* Surfaces — pure near-black */
+  --clr-bg:          #0a0a0a;
+  --clr-surface:     #111111;
+  --clr-surface-2:   #1a1a1a;
+  --clr-surface-3:   #222222;
+  --clr-border:      rgba(110,190,130,0.12);
+  --clr-border-hover:rgba(110,190,130,0.22);
 
-  /* Brand — rich gold accent */
-  --clr-primary:       #c9a84c;
-  --clr-primary-2:     #a8883a;
-  --clr-primary-light: rgba(201,168,76,0.12);
-  --clr-primary-glow:  rgba(201,168,76,0.28);
+  /* Brand — soft sage green (not neon) */
+  --clr-primary:       #6ebd82;
+  --clr-primary-2:     #52a86a;
+  --clr-primary-light: rgba(110,189,130,0.10);
+  --clr-primary-glow:  rgba(110,189,130,0.12);
 
   /* Status */
   --clr-success:    #4ade80;
@@ -97,16 +97,16 @@ html.dark-mode {
   --clr-info:       #60a5fa;
   --clr-info-bg:    rgba(96,165,250,0.10);
 
-  /* Text — warm off-white (matches reference cream tones) */
-  --clr-text:        #e8e4d4;
-  --clr-text-muted:  #9a967e;
-  --clr-text-faint:  #4e4e38;
+  /* Text — clean white */
+  --clr-text:        #f0f0f0;
+  --clr-text-muted:  #808080;
+  --clr-text-faint:  #404040;
 
-  /* Shadows — deeper, warmer */
-  --shadow-sm:   0 1px 4px rgba(0,0,0,0.5);
-  --shadow-md:   0 4px 20px rgba(0,0,0,0.6);
-  --shadow-lg:   0 8px 40px rgba(0,0,0,0.7);
-  --shadow-glow: 0 0 32px rgba(201,168,76,0.18);
+  /* Shadows */
+  --shadow-sm:   0 1px 4px rgba(0,0,0,0.6);
+  --shadow-md:   0 4px 20px rgba(0,0,0,0.7);
+  --shadow-lg:   0 8px 40px rgba(0,0,0,0.8);
+  --shadow-glow: 0 0 24px rgba(110,189,130,0.08);
 }
 
 /* ─────────────────────────────────────────
